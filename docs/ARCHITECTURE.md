@@ -4,7 +4,7 @@
 
 ## What this app is
 
-[1–2 sentences: what a user can do with this app, and the one-line "why it exists".]
+A linter for Claude Code prompts — flags what's missing (scope, acceptance criteria, guardrails) and rewrites the draft.
 
 ## Stack
 

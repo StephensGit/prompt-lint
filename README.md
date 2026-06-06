@@ -35,7 +35,7 @@ bun install
 ### 3. Restore skills
 
 ```bash
-npx skills install
+npx skills experimental_install
 ```
 
 ### 4. Re-initialise OpenSpec for this project

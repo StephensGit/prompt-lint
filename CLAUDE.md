@@ -4,7 +4,7 @@ Working instructions for this repo. Knowledge lives in `docs/` — this file poi
 
 ## What this is
 
-[One line: what this app does.] Next.js (App Router) + TypeScript, styled with Tailwind + shadcn/ui.
+[A linter for Claude Code prompts — flags what's missing (scope, acceptance criteria, guardrails) and rewrites the draft.] Next.js (App Router) + TypeScript, styled with Tailwind + shadcn/ui.
 
 ## Before starting work
 
