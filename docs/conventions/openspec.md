@@ -32,3 +32,4 @@ Don't skip artifacts or implement before tasks are written.
 
 - **Use:** new features, multi-file refactors, anything with real design decisions.
 - **Skip:** single-line fixes, typos, config tweaks, or when you've given exact instructions with no decisions to make.
+  

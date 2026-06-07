@@ -1,0 +1,35 @@
+schema: spec-driven
+
+context: |
+  Project: PromptLint — a linter for Claude Code prompts. A user pastes a rough, freeform
+  coding instruction; the app rewrites it into a sharper, Claude-Code-ready prompt (goal,
+  scope, acceptance criteria, constraints, guardrail) and lists what changed and why.
+  Personal / portfolio project. Single user. No accounts, no database, no auth.
+
+  Stack: Next.js 16 (App Router) + TypeScript; Tailwind CSS v4 + shadcn/ui; React Hook Form
+  + Zod; Bun (runtime + package manager) + Biome; Bun test + happy-dom + React Testing
+  Library. Anthropic Messages API (claude-sonnet-4-6), called server-side and streamed.
+
+  Non-negotiable constraints:
+  - The Anthropic API key is server-side only: read from process.env inside the route,
+    never sent to or referenced from the client. All Anthropic calls go through
+    app/api/refine.
+  - Schema-first: Zod schemas are the single source of truth for the request/response
+    contract; TypeScript types are inferred via z.infer, never hand-written alongside.
+  - Thin client: route/layout files stay thin; feature logic lives under features/<name>/.
+  - Refined output streams token-by-token to the client.
+  - The meta-prompt (the system prompt that does the refining) is a versioned artifact in
+    features/refine/ and is treated as source code — it is the product.
+
+  Out of scope for v1 (roadmap, do not build yet): accounts or persistence of any kind,
+  a structured schema-first input form (v1 input is a single textarea), task-type presets,
+  a before/after diff view, a saved prompt library.
+
+rules:
+  proposal:
+    - Keep each change small enough to review and manually test in one sitting.
+    - State explicitly what is out of scope for the change.
+  specs:
+    - Use Given/When/Then scenarios for acceptance criteria.
+  tasks:
+    - Do not introduce new dependencies unless the change's scope explicitly calls for it.
