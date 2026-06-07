@@ -1,8 +1,10 @@
 {
-    "hooks": {
-      "PostToolUse": [{
+  "hooks": {
+    "PostToolUse": [
+      {
         "matcher": "Edit|Write",
-        "hooks": [{"type": "command", "command": "bun check"}]
-      }]
-    }
+        "hooks": [{ "type": "command", "command": "bun check" }]
+      }
+    ]
   }
+}
