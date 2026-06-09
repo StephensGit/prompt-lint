@@ -4,7 +4,8 @@
 Turns a rough, freeform coding instruction into a sharper, Claude-Code-ready prompt and lists what changed and why. This is the app's one feature.
 
 ## Routes
-- _None yet._ The server route (`app/api/refine`, the Anthropic proxy) and the input/output UI are separate, later changes that build on the contract below.
+- `POST /api/refine` (`app/api/refine/route.ts`) — the server-side Anthropic proxy. Holds `ANTHROPIC_API_KEY` (server-only), validates the body with `parseRefineRequest`, calls the Messages API (`claude-sonnet-4-6`) with `META_PROMPT` as the system prompt, and streams the model's raw text deltas back as `text/plain`. A thin pipe — it does not parse or reshape the output (the client does that, later). Clean JSON errors on invalid input (400), missing key (500), and upstream failure.
+- The input/output UI is a separate, later change.
 
 ## Structure
 - `schema.ts` — the request/response **contract**: `RefineRequestSchema`, `RefineResponseSchema`, `RefineChangeSchema`, the inferred types, and the `parseRefineRequest` validation helper. This is the single source of truth for the refine shape.

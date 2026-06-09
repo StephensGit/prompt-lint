@@ -1,0 +1,132 @@
+import { beforeAll, beforeEach, describe, expect, mock, test } from 'bun:test';
+import { MAX_PROMPT_LENGTH } from '@/features/refine';
+
+// --- Mock state, driven per test ---------------------------------------------
+
+class MockAPIError extends Error {
+  status?: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+/** An async-iterable whose first pull rejects — simulates a pre-stream upstream failure. */
+function throwingStream(error: unknown) {
+  return {
+    [Symbol.asyncIterator]() {
+      return { next: () => Promise.reject(error) };
+    },
+  };
+}
+
+let constructed = 0;
+let streamCalls = 0;
+let streamImpl: () => unknown;
+
+class MockAnthropic {
+  static APIError = MockAPIError;
+  messages = {
+    stream: () => {
+      streamCalls += 1;
+      return streamImpl();
+    },
+  };
+  constructor() {
+    constructed += 1;
+  }
+}
+
+let POST: (request: Request) => Promise<Response>;
+
+beforeAll(async () => {
+  mock.module('@anthropic-ai/sdk', () => ({ default: MockAnthropic }));
+  ({ POST } = await import('./route'));
+});
+
+beforeEach(() => {
+  constructed = 0;
+  streamCalls = 0;
+  streamImpl = () => {
+    throw new Error('stream should not have been called');
+  };
+  process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+});
+
+function post(body: string) {
+  return POST(
+    new Request('http://localhost/api/refine', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body,
+    }),
+  );
+}
+
+// --- Tests --------------------------------------------------------------------
+
+describe('POST /api/refine — invalid input', () => {
+  test('rejects malformed JSON with 400 and never calls Anthropic', async () => {
+    const res = await post('{not json');
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBeTruthy();
+    expect(constructed).toBe(0);
+    expect(streamCalls).toBe(0);
+  });
+
+  test('rejects an empty prompt with 400', async () => {
+    const res = await post(JSON.stringify({ prompt: '' }));
+    expect(res.status).toBe(400);
+    expect(constructed).toBe(0);
+  });
+
+  test('rejects an over-length prompt with 400', async () => {
+    const res = await post(
+      JSON.stringify({ prompt: 'a'.repeat(MAX_PROMPT_LENGTH + 1) }),
+    );
+    expect(res.status).toBe(400);
+    expect(constructed).toBe(0);
+  });
+});
+
+describe('POST /api/refine — missing API key', () => {
+  test('returns a clean 500 and never calls Anthropic', async () => {
+    process.env.ANTHROPIC_API_KEY = undefined;
+    const res = await post(
+      JSON.stringify({ prompt: 'add a dark mode toggle' }),
+    );
+    expect(res.status).toBe(500);
+    expect((await res.json()).error).toBeTruthy();
+    expect(constructed).toBe(0);
+    expect(streamCalls).toBe(0);
+  });
+});
+
+describe('POST /api/refine — upstream error', () => {
+  test('maps an Anthropic.APIError status to a clean JSON error with no stack trace', async () => {
+    streamImpl = () =>
+      throwingStream(
+        new MockAPIError(529, 'overloaded_error: stack details here'),
+      );
+    const res = await post(
+      JSON.stringify({ prompt: 'add a dark mode toggle' }),
+    );
+    expect(res.status).toBe(529);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+    // The upstream message/stack must not leak into the response.
+    expect(JSON.stringify(body)).not.toContain('overloaded_error');
+    expect(JSON.stringify(body)).not.toContain('stack');
+    expect(constructed).toBe(1);
+    expect(streamCalls).toBe(1);
+  });
+
+  test('falls back to 502 for a non-APIError upstream failure', async () => {
+    streamImpl = () => throwingStream(new Error('socket hang up'));
+    const res = await post(
+      JSON.stringify({ prompt: 'add a dark mode toggle' }),
+    );
+    expect(res.status).toBe(502);
+    expect(JSON.stringify(await res.json())).not.toContain('socket hang up');
+  });
+});
