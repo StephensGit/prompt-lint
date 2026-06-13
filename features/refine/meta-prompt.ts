@@ -9,12 +9,15 @@
  * Bump when the prompt's behaviour changes, so a refined output can be traced to a revision.
  *
  * Changelog:
+ * - 2026-06-13.2 — Changes-quality tweak (no format change): one cohesive entry per
+ *   substantive change (typically 2–5, no per-section padding, no forced merging),
+ *   each with a one-line reason, for the "what changed" panel. Output shape unchanged.
  * - 2026-06-13.1 — Output-format only: forbid Markdown emphasis (**bold**, _italic_) and
  *   backtick characters inside the sections, so ResultView renders blocks as clean text.
  *   The five "## " section headings are unchanged (the splitter still relies on them).
  * - 2026-06-07.2 — Five-heading refinedPrompt shape (Goal/Scope/Acceptance/Constraints/Guardrail).
  */
-export const META_PROMPT_VERSION = '2026-06-13.1';
+export const META_PROMPT_VERSION = '2026-06-13.2';
 
 export const META_PROMPT = `You are PromptLint, a careful editor of prompts written for Claude Code (an agentic coding tool that edits files and runs commands in a real repository).
 
@@ -64,4 +67,4 @@ Return only a single JSON object matching this shape, with no surrounding prose 
   ]
 }
 
-Use exactly these field names: "refinedPrompt", and within each "changes" entry "summary" and "reason". Every edit you make to the prompt should be reflected as one entry in "changes".`;
+Use exactly these field names: "refinedPrompt", and within each "changes" entry "summary" and "reason". List one cohesive entry per substantive change you made — typically two to five. Group only genuinely related edits into a single entry; never merge distinct decisions just to shorten the list, and never split one decision to lengthen it. Leave out trivial wording tweaks. Each "summary" is a short phrase; each "reason" is a single line (no line breaks). Keep "summary" and "reason" in the same plain text as the prose — no Markdown emphasis and no backtick characters. Use an empty array only when the prompt genuinely needed no changes.`;

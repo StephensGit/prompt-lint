@@ -24,13 +24,13 @@ function streamingResponse(chunks: string[], init?: ResponseInit): Response {
 }
 
 describe('streamRefine', () => {
-  test('decodes the refinedPrompt progressively and resolves with the final text', async () => {
+  test('decodes the refinedPrompt progressively and resolves with prompt + changes', async () => {
     // The model returns a single JSON object; the route streams its raw deltas.
     const chunks = [
       '{"refinedPrompt": "## Goal',
       '\\nReset the dropdown.',
       '\\n\\n## Scope\\nfeatures/results/",',
-      ' "changes": []}',
+      ' "changes": [{"summary": "Added scope", "reason": "Keeps it focused."}]}',
     ];
     globalThis.fetch = mock(async () =>
       streamingResponse(chunks),
@@ -42,12 +42,26 @@ describe('streamRefine', () => {
       onText: (text) => snapshots.push(text),
     });
 
-    expect(final).toBe(
+    expect(final.refinedPrompt).toBe(
       '## Goal\nReset the dropdown.\n\n## Scope\nfeatures/results/',
     );
+    expect(final.changes).toEqual([
+      { summary: 'Added scope', reason: 'Keeps it focused.' },
+    ]);
     // The first snapshot never contains the JSON wrapper.
     expect(snapshots[0]).toBe('## Goal');
-    expect(snapshots.at(-1)).toBe(final);
+    expect(snapshots.at(-1)).toBe(final.refinedPrompt);
+  });
+
+  test('degrades to result-with-no-changes when the JSON tail is malformed', async () => {
+    // Truncated stream: prose decodable, but the whole document is not valid JSON.
+    globalThis.fetch = mock(async () =>
+      streamingResponse(['{"refinedPrompt": "## Goal\\nDo it", "changes": [{']),
+    ) as unknown as typeof fetch;
+
+    const final = await streamRefine({ prompt: 'x', onText: () => {} });
+    expect(final.refinedPrompt).toBe('## Goal\nDo it');
+    expect(final.changes).toEqual([]);
   });
 
   test('sends the prompt as { prompt } JSON to /api/refine', async () => {

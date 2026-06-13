@@ -1,5 +1,6 @@
 export { EXAMPLE_PROMPT, PromptInput } from './components/PromptInput';
 export { ResultView } from './components/ResultView';
+export { WhatChanged } from './components/WhatChanged';
 export {
   type RefineStatus,
   type UseRefineStream,
