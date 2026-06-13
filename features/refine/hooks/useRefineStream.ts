@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefineError, streamRefine } from '@/features/refine/api/refine';
-import type { RefineRequest } from '@/features/refine/schema';
+import type { RefineChange, RefineRequest } from '@/features/refine/schema';
 
 export type RefineStatus = 'idle' | 'loading' | 'streaming' | 'done' | 'error';
 
 export interface UseRefineStream {
   /** The refined prompt decoded so far (grows while streaming). */
   text: string;
+  /** The "what changed" entries — populated on stream end (empty until then). */
+  changes: RefineChange[];
   status: RefineStatus;
   /** True while a request is in flight (loading or streaming). */
   isStreaming: boolean;
@@ -22,6 +24,7 @@ export interface UseRefineStream {
 
 export function useRefineStream(): UseRefineStream {
   const [text, setText] = useState('');
+  const [changes, setChanges] = useState<RefineChange[]>([]);
   const [status, setStatus] = useState<RefineStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +38,7 @@ export function useRefineStream(): UseRefineStream {
     lastPromptRef.current = prompt;
 
     setText('');
+    setChanges([]);
     setError(null);
     setStatus('loading');
 
@@ -51,11 +55,12 @@ export function useRefineStream(): UseRefineStream {
         }
       },
     })
-      .then((finalText) => {
+      .then((result) => {
         if (controller.signal.aborted) {
           return;
         }
-        setText(finalText);
+        setText(result.refinedPrompt);
+        setChanges(result.changes);
         setStatus('done');
       })
       .catch((err: unknown) => {
@@ -90,6 +95,7 @@ export function useRefineStream(): UseRefineStream {
 
   return {
     text,
+    changes,
     status,
     isStreaming: status === 'loading' || status === 'streaming',
     error,

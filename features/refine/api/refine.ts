@@ -1,4 +1,7 @@
-import { RefineResponseSchema } from '@/features/refine/schema';
+import {
+  type RefineResponse,
+  RefineResponseSchema,
+} from '@/features/refine/schema';
 import { extractRefinedPrompt } from '@/features/refine/utils/refined-prompt';
 
 /** Give a slow upstream a generous ceiling, then surface a timeout (design: ~30s). */
@@ -29,13 +32,14 @@ export class RefineError extends Error {
  * The route streams the model's raw JSON output as `text/plain`; we decode the
  * `refinedPrompt` value out of that partial JSON as it arrives (see
  * `extractRefinedPrompt`) and hand each cumulative snapshot to `onText`. Resolves
- * with the final, fully-validated refined prompt; rejects with a `RefineError`.
+ * with the final, fully-validated `RefineResponse` (refined prompt + changes);
+ * rejects with a `RefineError`.
  */
 export async function streamRefine({
   prompt,
   onText,
   signal,
-}: StreamRefineOptions): Promise<string> {
+}: StreamRefineOptions): Promise<RefineResponse> {
   const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
   const composite = signal ? AbortSignal.any([signal, timeout]) : timeout;
 
@@ -72,20 +76,24 @@ export async function streamRefine({
     throw toRefineError(error, timeout);
   }
 
-  return finalRefinedPrompt(raw);
+  return finalResult(raw);
 }
 
-/** Prefer the authoritative parse; fall back to the incremental decode. */
-function finalRefinedPrompt(raw: string): string {
+/**
+ * Authoritative parse of the complete stream — the single place changes are read.
+ * Falls back to the incremental prose decode (and no changes) if the JSON is
+ * truncated or invalid, so a malformed tail degrades to "result, no changes".
+ */
+function finalResult(raw: string): RefineResponse {
   try {
     const parsed = RefineResponseSchema.safeParse(JSON.parse(raw));
     if (parsed.success) {
-      return parsed.data.refinedPrompt;
+      return parsed.data;
     }
   } catch {
     // Not valid JSON (e.g. truncated) — fall through to the incremental decode.
   }
-  return extractRefinedPrompt(raw);
+  return { refinedPrompt: extractRefinedPrompt(raw), changes: [] };
 }
 
 /** The route returns clean JSON errors (`{ error }`) on 400/500/502. */
