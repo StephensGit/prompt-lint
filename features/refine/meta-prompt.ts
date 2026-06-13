@@ -5,8 +5,16 @@
  * instructions must stay aligned with `RefineResponse` in ./schema.ts.
  */
 
-/** Bump when the prompt's behaviour changes, so a refined output can be traced to a revision. */
-export const META_PROMPT_VERSION = '2026-06-07.2';
+/**
+ * Bump when the prompt's behaviour changes, so a refined output can be traced to a revision.
+ *
+ * Changelog:
+ * - 2026-06-13.1 — Output-format only: forbid Markdown emphasis (**bold**, _italic_) and
+ *   backtick characters inside the sections, so ResultView renders blocks as clean text.
+ *   The five "## " section headings are unchanged (the splitter still relies on them).
+ * - 2026-06-07.2 — Five-heading refinedPrompt shape (Goal/Scope/Acceptance/Constraints/Guardrail).
+ */
+export const META_PROMPT_VERSION = '2026-06-13.1';
 
 export const META_PROMPT = `You are PromptLint, a careful editor of prompts written for Claude Code (an agentic coding tool that edits files and runs commands in a real repository).
 
@@ -39,6 +47,8 @@ Write the refinedPrompt as Markdown using these five section headings, in this o
 ## Guardrail
 
 These correspond to rules 1–5 above. Always include all five headings. Where a section's information is genuinely missing from the user's input, keep the heading and place a "[TODO: confirm ...]" marker under it — never drop a section, and never fill it with invented content.
+
+Write the body of each section in clean plain text. The five "## " heading lines shown above are the only Markdown the output may contain — keep them exactly as written, each on its own line, so the sections split reliably. Do not use any other Markdown formatting inside the sections: no bold (no ** around text), no italics (no _ or * around text), and no backtick characters or code fences. Name files, components, and identifiers as plain words — write ResultsTable.tsx, Badge, or row.status directly, never wrapped in backticks. Plain hyphen bullet lists (lines beginning with "- ") and blank lines between paragraphs are fine, and "[TODO: confirm ...]" markers stay exactly as written.
 
 # Output format
 
