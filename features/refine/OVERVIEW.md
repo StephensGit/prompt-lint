@@ -9,7 +9,8 @@ Turns a rough, freeform coding instruction into a sharper, Claude-Code-ready pro
 
 ## Components
 - `components/PromptInput.tsx` — the composer panel. RHF + Zod (`RefineRequestSchema`) textarea with live char/word counts, "Use example" (fills the sample prompt), "Clear" (disabled when empty), primary "Refine" button (disabled when invalid), and ⌘+Enter shortcut. Accepts `onRefine: (data: RefineRequest) => void`.
-- `components/ResultView.tsx` — the result panel. Prop-driven (`status`, `text`, `error`, `onRetry`); renders empty / loading (skeleton) / streaming / result / error states and the "Refined with Claude Sonnet 4.6" attribution.
+- `components/ResultView.tsx` — the result panel. Prop-driven (`status`, `text`, `error`, `onRetry`); renders empty / loading (skeleton) / streaming / result / error states and the "Refined with Claude Sonnet 4.6" attribution. Shows the `CopyButton` in its header once the result is complete.
+- `components/CopyButton.tsx` — copies the refined prompt to the clipboard via `navigator.clipboard.writeText` (the `refinedPrompt` string from state, not the DOM). Confirms with "Copied!" (or "Copy failed" on rejection) and resets after ~1.75s. Rendered only when `status === 'done'`.
 - `components/RefinedPrompt.tsx` — renders the (partial) refined markdown as labelled, colour-coded section blocks (Goal / Scope / Acceptance Criteria / Constraints / Guardrail) with a blinking caret on the trailing block while streaming.
 - `components/WhatChanged.tsx` — the "what changed" side panel. Prop-driven (`status`, `changes`); shows a skeleton while streaming (changes arrive on stream end), the change list (summary + one-line reason, with a count badge) when done, and a quiet "No changes were needed." when the list is empty.
 

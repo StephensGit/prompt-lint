@@ -1,5 +1,6 @@
 import { AlertTriangle, RotateCw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/features/refine/components/CopyButton';
 import { RefinedPrompt } from '@/features/refine/components/RefinedPrompt';
 import type { RefineStatus } from '@/features/refine/hooks/useRefineStream';
 
@@ -31,10 +32,11 @@ export function ResultView({ status, text, error, onRetry }: ResultViewProps) {
 
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-(--border-strong) bg-card">
-      <div className="border-b border-(--border-strong) px-5 py-3">
+      <div className="flex items-center justify-between gap-3 border-b border-(--border-strong) px-5 py-3">
         <h2 className="text-sm font-semibold text-foreground">
           Refined prompt
         </h2>
+        {status === 'done' && text.length > 0 && <CopyButton text={text} />}
       </div>
 
       <div className="p-5">
