@@ -59,6 +59,14 @@ export function useRefineStream(): UseRefineStream {
         if (controller.signal.aborted) {
           return;
         }
+        // Fail-soft on a missing-changes tail is fine (empty list), but if even the
+        // prose is unusable there is nothing to show — treat it as a model error
+        // rather than render an empty result panel.
+        if (result.refinedPrompt.trim().length === 0) {
+          setError('The refining service returned an empty result. Try again.');
+          setStatus('error');
+          return;
+        }
         setText(result.refinedPrompt);
         setChanges(result.changes);
         setStatus('done');

@@ -4,21 +4,22 @@ import {
 } from '@/features/refine/schema';
 import { extractRefinedPrompt } from '@/features/refine/utils/refined-prompt';
 
-/** Give a slow upstream a generous ceiling, then surface a timeout (design: ~30s). */
-const REQUEST_TIMEOUT_MS = 30_000;
+// No client-side timeout by design: the stream ends when the server closes it, and a
+// fixed cap risks cutting off a legitimately slow refine. [TODO: confirm whether a
+// client timeout is needed, and what duration, if a stuck stream shows up in testing.]
 
 export interface StreamRefineOptions {
   /** The validated rough prompt to refine. */
   prompt: string;
   /** Called with the decoded refined-prompt text on every chunk (cumulative). */
   onText: (text: string) => void;
-  /** Optional caller signal; combined with the internal timeout. */
+  /** Optional caller signal for cancellation (e.g. a superseding submit / unmount). */
   signal?: AbortSignal;
 }
 
 /** A refine request failed in a way worth showing the user a friendly message for. */
 export class RefineError extends Error {
-  readonly kind: 'model' | 'timeout' | 'network';
+  readonly kind: 'model' | 'network';
   constructor(kind: RefineError['kind'], message: string) {
     super(message);
     this.name = 'RefineError';
@@ -40,19 +41,16 @@ export async function streamRefine({
   onText,
   signal,
 }: StreamRefineOptions): Promise<RefineResponse> {
-  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
-  const composite = signal ? AbortSignal.any([signal, timeout]) : timeout;
-
   let response: Response;
   try {
     response = await fetch('/api/refine', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ prompt }),
-      signal: composite,
+      signal,
     });
   } catch (error) {
-    throw toRefineError(error, timeout);
+    throw toRefineError(error);
   }
 
   if (!response.ok || !response.body) {
@@ -73,7 +71,7 @@ export async function streamRefine({
       onText(extractRefinedPrompt(raw));
     }
   } catch (error) {
-    throw toRefineError(error, timeout);
+    throw toRefineError(error);
   }
 
   return finalResult(raw);
@@ -109,15 +107,10 @@ async function readErrorMessage(response: Response): Promise<string> {
   return 'The refining service returned an error.';
 }
 
-function toRefineError(error: unknown, timeout: AbortSignal): RefineError {
-  if (timeout.aborted) {
-    return new RefineError(
-      'timeout',
-      'That took longer than 30s and was cancelled. Your input is still here — retry when ready.',
-    );
-  }
+function toRefineError(error: unknown): RefineError {
   if (error instanceof DOMException && error.name === 'AbortError') {
-    // Caller-initiated cancel (e.g. a new submit) — not user-facing.
+    // Caller-initiated cancel (e.g. a new submit / unmount) — not user-facing; the
+    // hook swallows it via the aborted-signal guard.
     return new RefineError('network', 'Request cancelled.');
   }
   return new RefineError(
