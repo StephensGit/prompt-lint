@@ -33,7 +33,7 @@ export function ResultView({ status, text, error, onRetry }: ResultViewProps) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-(--border-strong) bg-card">
       <div className="flex items-center justify-between gap-3 border-b border-(--border-strong) px-5 py-3">
-        <h2 className="text-sm font-semibold text-foreground">
+        <h2 className="text-[13px] font-semibold text-foreground">
           Refined prompt
         </h2>
         {status === 'done' && text.length > 0 && <CopyButton text={text} />}
@@ -107,10 +107,11 @@ function ErrorState({
         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
         <div className="flex flex-col gap-1">
           <h2 className="text-sm font-semibold text-foreground">
-            The model hit an error
+            Something went wrong
           </h2>
           <p className="text-sm text-muted-foreground">
-            {message ?? 'Something went wrong while refining.'}
+            {message ?? 'Something went wrong refining your prompt.'} Try again,
+            or rephrase your draft.
           </p>
         </div>
       </div>

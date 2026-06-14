@@ -44,4 +44,7 @@ next-env.d.ts
 .claude/skills/web-design-guidelines/
 .claude/skills/vercel-composition-patterns/
 .claude/skills/next-best-practices/
-.claude/skills/shadcn/docs/design/*.png
+.claude/skills/shadcn/
+
+# design references — kept local, not pushed
+docs/design/

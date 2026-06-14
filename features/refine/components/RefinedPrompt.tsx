@@ -6,23 +6,18 @@ import {
 import { cn } from '@/lib/utils';
 
 interface SectionStyle {
-  /** Left accent bar + uppercase label colour. */
+  /** Left accent bar colour. */
   bar: string;
+  /** Uppercase label colour. */
   label: string;
   /** Soft hue tint behind the block (light / dark). */
   tint: string;
 }
 
-// Design handoff defines hues only for Scope / Acceptance / Guardrail.
-// TODO: confirm — Goal and Constraints have no dedicated hue in the design doc,
-// so they render with the neutral strong-border treatment rather than an
-// invented colour.
-const SECTION_STYLES: Record<SectionKey, SectionStyle> = {
-  goal: {
-    bar: 'border-l-[var(--border-strong)]',
-    label: 'text-muted-foreground',
-    tint: 'bg-(--surface)',
-  },
+// Per the design comps, only Scope / Acceptance / Guardrail carry a hue (left
+// 3px bar + tinted box). Goal and Constraints render bare — a muted label and
+// plain body, no bar or tint.
+const HUE_STYLES: Partial<Record<SectionKey, SectionStyle>> = {
   scope: {
     bar: 'border-l-[hsl(var(--hue1))]',
     label: 'text-[hsl(var(--hue1))]',
@@ -32,11 +27,6 @@ const SECTION_STYLES: Record<SectionKey, SectionStyle> = {
     bar: 'border-l-[hsl(var(--hue2))]',
     label: 'text-[hsl(var(--hue2))]',
     tint: 'bg-[hsl(var(--hue2)/0.10)] dark:bg-[hsl(var(--hue2)/0.16)]',
-  },
-  constraints: {
-    bar: 'border-l-[var(--border-strong)]',
-    label: 'text-muted-foreground',
-    tint: 'bg-(--surface)',
   },
   guardrail: {
     bar: 'border-l-[hsl(var(--hue3))]',
@@ -96,15 +86,19 @@ function SectionBlock({
   section: RefinedSection;
   showCaret: boolean;
 }) {
-  const style = SECTION_STYLES[section.key];
+  const style = HUE_STYLES[section.key];
   return (
     <section
-      className={cn('rounded-md border-l-[3px] p-4', style.bar, style.tint)}
+      className={
+        style
+          ? cn('rounded-md border-l-[3px] p-4', style.bar, style.tint)
+          : undefined
+      }
     >
       <h3
         className={cn(
           'mb-2 text-[11px] font-semibold uppercase tracking-[0.06em]',
-          style.label,
+          style ? style.label : 'text-muted-foreground',
         )}
       >
         {section.label}
