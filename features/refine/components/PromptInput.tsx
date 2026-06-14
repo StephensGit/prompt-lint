@@ -38,7 +38,7 @@ export function PromptInput({ onRefine }: PromptInputProps) {
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-(--border-strong) bg-card">
+    <div className="flex flex-col overflow-hidden rounded-lg border border-(--border-strong) bg-card transition-colors focus-within:border-primary/70 focus-within:ring-[3px] focus-within:ring-ring/16">
       <Controller
         name="prompt"
         control={form.control}
