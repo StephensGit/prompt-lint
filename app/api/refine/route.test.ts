@@ -102,7 +102,9 @@ describe('POST /api/refine — missing API key', () => {
       null, // omit X-Anthropic-Key header
     );
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toBe('missing-key');
+    expect((await res.json()).error).toBe(
+      'API key required — add yours in Settings.',
+    );
     expect(constructed).toBe(0);
     expect(streamCalls).toBe(0);
   });
@@ -125,6 +127,32 @@ describe('POST /api/refine — upstream error', () => {
     expect(JSON.stringify(body)).not.toContain('stack');
     expect(constructed).toBe(1);
     expect(streamCalls).toBe(1);
+  });
+
+  test('returns 401 with a friendly message and no upstream detail for an invalid key', async () => {
+    streamImpl = () =>
+      throwingStream(new MockAPIError(401, 'auth_error: secret'));
+    const res = await post(
+      JSON.stringify({ prompt: 'add a dark mode toggle' }),
+    );
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+    expect(JSON.stringify(body)).not.toContain('auth_error');
+    expect(JSON.stringify(body)).not.toContain('secret');
+  });
+
+  test('returns 429 with a friendly message and no upstream detail on rate limit', async () => {
+    streamImpl = () =>
+      throwingStream(new MockAPIError(429, 'rate_limit_error: quota'));
+    const res = await post(
+      JSON.stringify({ prompt: 'add a dark mode toggle' }),
+    );
+    expect(res.status).toBe(429);
+    const body = await res.json();
+    expect(body.error).toBeTruthy();
+    expect(JSON.stringify(body)).not.toContain('rate_limit_error');
+    expect(JSON.stringify(body)).not.toContain('quota');
   });
 
   test('falls back to 502 for a non-APIError upstream failure', async () => {

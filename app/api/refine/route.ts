@@ -57,7 +57,7 @@ export async function POST(request: Request) {
 
   const apiKey = request.headers.get('X-Anthropic-Key');
   if (!apiKey) {
-    return jsonError('missing-key', 400);
+    return jsonError('API key required — add yours in Settings.', 400);
   }
 
   const anthropic = new Anthropic({ apiKey });

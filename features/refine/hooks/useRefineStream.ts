@@ -25,8 +25,8 @@ export interface UseRefineStream {
   refineDemo: (exampleId: string) => void;
   /** Reset all result state back to idle. */
   reset: () => void;
-  /** Re-run the most recent live prompt (used by the error state's retry). */
-  retry: () => void;
+  /** Re-run the most recent live prompt with the caller's current API key. */
+  retry: (apiKey: string) => void;
 }
 
 export function useRefineStream(): UseRefineStream {
@@ -38,14 +38,12 @@ export function useRefineStream(): UseRefineStream {
 
   const controllerRef = useRef<AbortController | null>(null);
   const lastPromptRef = useRef<string | null>(null);
-  const lastApiKeyRef = useRef<string>('');
 
   const run = useCallback((prompt: string, apiKey: string) => {
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
     lastPromptRef.current = prompt;
-    lastApiKeyRef.current = apiKey;
 
     setText('');
     setChanges([]);
@@ -122,11 +120,14 @@ export function useRefineStream(): UseRefineStream {
     setStatus('idle');
   }, []);
 
-  const retry = useCallback(() => {
-    if (lastPromptRef.current !== null) {
-      run(lastPromptRef.current, lastApiKeyRef.current);
-    }
-  }, [run]);
+  const retry = useCallback(
+    (apiKey: string) => {
+      if (lastPromptRef.current !== null) {
+        run(lastPromptRef.current, apiKey);
+      }
+    },
+    [run],
+  );
 
   // Cancel an in-flight request if the component unmounts.
   useEffect(() => () => controllerRef.current?.abort(), []);

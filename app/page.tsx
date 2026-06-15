@@ -88,7 +88,7 @@ export default function Home() {
             status={status}
             text={text}
             error={error}
-            onRetry={retry}
+            onRetry={() => retry(apiKey)}
             isDemoResult={isDemoResult}
           />
         </div>

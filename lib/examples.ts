@@ -1,7 +1,4 @@
-export type Change = {
-  summary: string;
-  reason: string;
-};
+import type { RefineChange } from '@/features/refine/schema';
 
 export type Example = {
   id: string;
@@ -10,7 +7,7 @@ export type Example = {
   input: string;
   output: {
     refinedPrompt: string;
-    changes: Change[];
+    changes: RefineChange[];
   };
 };
 
