@@ -8,13 +8,14 @@ Claude-Code-ready prompt, with a short "what changed and why" alongside it.
 
 ## How it works
 
-You paste a rough prompt → it's sent **server-side** to the Anthropic Messages API with a
-purpose-built system prompt → you get back a structured, refined prompt (goal, scope,
-acceptance criteria, constraints, guardrail) plus a list of the changes it made and why.
-The output streams token-by-token so it feels fast.
+Paste a rough prompt → hit Refine → it's sent server-side to the Anthropic Messages API
+with a purpose-built system prompt → you get back a structured, refined prompt (goal,
+scope, acceptance criteria, constraints, guardrail) plus a list of the changes made and
+why. The output streams token-by-token so it feels fast.
 
-The Anthropic API key lives only in the server route and is never shipped to the browser —
-that proxy is the core architectural decision of the app.
+Your Anthropic API key is supplied by you in the settings drawer. It's stored in your
+browser's localStorage, sent with each request as a header, and never logged or stored
+server-side. Four pre-computed examples are available without a key.
 
 ## Stack
 
@@ -31,21 +32,18 @@ that proxy is the core architectural decision of the app.
 # 1. install dependencies
 bun install
 
-# 2. add your Anthropic API key
-echo "ANTHROPIC_API_KEY=sk-ant-..." > .env.local
-
-# 3. restore the agent skills pinned in skills-lock.json
+# 2. restore the agent skills pinned in skills-lock.json
 npx skills experimental_install
 
-# 4. run the dev server
+# 3. run the dev server
 bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-> `.env.local` is gitignored. Your `ANTHROPIC_API_KEY` must never be committed or exposed to
-> the client — it's only ever read inside the server route. Commit a `.env.example` (with the
-> key name but no value) so the required variable is documented.
+To refine your own prompts, open the settings drawer (⚙ icon) and paste your Anthropic
+API key. It stays in localStorage and is never stored server-side. The four built-in
+examples work without a key.
 
 ## Commands
 
@@ -61,8 +59,8 @@ bun test         # unit tests
 ```
 app/              routes and layouts (thin); app/api/refine/ holds the server route
 features/refine/  the refine feature — schema, meta-prompt, components, hooks
-components/ui/     shadcn primitives
-lib/              cross-cutting helpers (providers, utils, env)
+components/ui/    shadcn primitives
+lib/              cross-cutting helpers (providers, utils, examples)
 docs/             architecture, conventions, decisions
 openspec/         spec-driven change artifacts
 .claude/          skills + OpenSpec slash commands
