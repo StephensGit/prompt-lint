@@ -1,91 +1,70 @@
-import { Wand2 } from 'lucide-react';
-import type { RefineStatus } from '@/features/refine/hooks/useRefineStream';
+import { Check, Wand2 } from 'lucide-react';
 import type { RefineChange } from '@/features/refine/schema';
-import { cn } from '@/lib/utils';
 
 interface WhatChangedProps {
-  status: RefineStatus;
-  /** Populated on stream end; empty while the result is still streaming. */
+  /** Populated change list — only rendered when the stream is done. */
   changes: RefineChange[];
 }
 
-// Colour-code each change header by cycling the section hue tokens (blue / violet /
-// amber), matching the design. The change data carries no category, so the hue is
-// positional; legible in both themes since each hue token has a light + dark value.
-const HEADER_HUES = [
-  'text-[hsl(var(--hue1))]',
-  'text-[hsl(var(--hue2))]',
-  'text-[hsl(var(--hue3))]',
-];
+// Positional hue assignment: cycles blue → violet → amber.
+// The .change-item hover styles in globals.css key off --huec (set inline per card).
+const HUE_VARS = ['--hue1', '--hue2', '--hue3'] as const;
 
 /**
- * The "what changed and why" panel shown beside the refined result. Changes land
- * on stream end, so this shows a subtle skeleton while streaming and fails soft to
- * a quiet "no changes" state when the model returned none (or the tail was
- * unparseable — `streamRefine` degrades that to an empty list).
+ * "What changed & why" panel — card-per-change with a coloured check marker,
+ * cross-keyed to the matching hue-tinted prompt block. Rendered only on done.
  */
-export function WhatChanged({ status, changes }: WhatChangedProps) {
-  const isPending = status === 'loading' || status === 'streaming';
-
+export function WhatChanged({ changes }: WhatChangedProps) {
   return (
-    <aside className="flex h-fit flex-col overflow-hidden rounded-lg border border-(--border-strong) bg-card">
-      <div className="flex items-center gap-2 border-b border-(--border-strong) px-5 py-3">
-        <Wand2 className="h-4 w-4 text-muted-foreground" />
+    <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      {/* Header */}
+      <div className="flex items-center gap-2 border-b border-border px-[22px] py-3">
+        <Wand2 className="h-[15px] w-[15px] text-muted-foreground" />
         <h2 className="text-[13px] font-semibold text-foreground">
-          What changed
+          What changed &amp; why
         </h2>
-        {status === 'done' && changes.length > 0 && (
-          <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium text-muted-foreground">
+        {changes.length > 0 && (
+          <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
             {changes.length}
           </span>
         )}
       </div>
 
-      <div className="p-5">
-        {isPending ? (
-          <ChangesSkeleton />
-        ) : changes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+      {/* Change list */}
+      <div className="flex flex-col gap-2.5 p-[22px]">
+        {changes.length === 0 ? (
+          <p className="text-[13px] text-muted-foreground">
             No changes were needed.
           </p>
         ) : (
-          <ul className="flex flex-col gap-4">
-            {changes.map((change, index) => (
-              <li
-                // Summaries can repeat; index is stable for this static list.
+          changes.map((change, index) => {
+            const hueVar = HUE_VARS[index % HUE_VARS.length];
+            return (
+              <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: order-stable change list
                 key={index}
-                className="flex flex-col gap-1"
+                className="change-item grid grid-cols-[auto_1fr] gap-3 rounded-[10px] border border-border bg-card p-[13px_14px]"
+                style={{ '--huec': `var(${hueVar})` } as React.CSSProperties}
               >
-                <p
-                  className={cn(
-                    'text-[13.5px] font-semibold',
-                    HEADER_HUES[index % HEADER_HUES.length],
-                  )}
-                >
-                  {change.summary}
-                </p>
-                <p className="text-[12.5px] leading-[1.6] text-muted-foreground">
-                  {change.reason}
-                </p>
-              </li>
-            ))}
-          </ul>
+                {/* Coloured check marker */}
+                <div className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-[hsl(var(--huec)/0.10)] text-[hsl(var(--huec))] dark:bg-[hsl(var(--huec)/0.16)]">
+                  <Check className="h-[13px] w-[13px]" strokeWidth={2.6} />
+                </div>
+
+                {/* Change content */}
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-semibold tracking-[-0.005em] text-foreground">
+                    {change.summary}
+                  </p>
+                  <p className="mt-0.5 text-[12.5px] leading-[1.5] text-muted-foreground">
+                    {change.reason}
+                  </p>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
-    </aside>
-  );
-}
-
-function ChangesSkeleton() {
-  return (
-    <output className="flex flex-col gap-4" aria-label="Loading changes…">
-      {[0, 1, 2].map((row) => (
-        <div key={row} className="flex flex-col gap-1.5">
-          <div className="h-3.5 w-2/5 rounded bg-muted motion-safe:animate-pulse" />
-          <div className="h-3 w-full rounded bg-muted motion-safe:animate-pulse" />
-        </div>
-      ))}
-    </output>
+    </div>
   );
 }

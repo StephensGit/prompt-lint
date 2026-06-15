@@ -92,12 +92,10 @@ describe('PromptInput', () => {
     expect(refineButton()).toHaveProperty('disabled', true);
   });
 
-  test('"Clear" is disabled when textarea is empty', () => {
+  test('"Clear" is not shown when textarea is empty', () => {
     renderInput();
-    expect(screen.getByRole('button', { name: /clear/i })).toHaveProperty(
-      'disabled',
-      true,
-    );
+    // Design: Clear is hidden (not just disabled) when there is no input.
+    expect(screen.queryByRole('button', { name: /clear/i })).toBeNull();
   });
 
   test('clicking Refine calls onRefine with the validated payload', async () => {

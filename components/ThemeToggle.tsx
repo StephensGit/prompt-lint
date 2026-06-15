@@ -31,12 +31,17 @@ export function ThemeToggle() {
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="outline"
       size="icon"
       onClick={toggle}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="size-9 rounded-[9px] text-muted-foreground"
     >
-      {isDark ? <Sun /> : <Moon />}
+      {isDark ? (
+        <Sun className="h-[17px] w-[17px]" />
+      ) : (
+        <Moon className="h-[17px] w-[17px]" />
+      )}
     </Button>
   );
 }
