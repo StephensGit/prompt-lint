@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Sparkles, Wand2, X } from 'lucide-react';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError } from '@/components/ui/field';
@@ -11,17 +12,23 @@ import {
   type RefineRequest,
   RefineRequestSchema,
 } from '@/features/refine/schema';
-
-export const EXAMPLE_PROMPT =
-  'the status dropdown on the results table keeps its value when you switch tabs, it should reset to default. fix it';
+import { EXAMPLES } from '@/lib/examples';
 
 interface PromptInputProps {
-  onRefine: (data: RefineRequest) => void;
+  onRefine: (data: RefineRequest, exampleId: string | null) => void;
+  onClear?: () => void;
   status?: RefineStatus;
 }
 
-export function PromptInput({ onRefine, status = 'idle' }: PromptInputProps) {
+export function PromptInput({
+  onRefine,
+  onClear,
+  status = 'idle',
+}: PromptInputProps) {
   const isLoading = status === 'loading' || status === 'streaming';
+  const [selectedExampleId, setSelectedExampleId] = useState<string | null>(
+    null,
+  );
 
   const form = useForm<RefineRequest>({
     resolver: zodResolver(RefineRequestSchema),
@@ -34,11 +41,26 @@ export function PromptInput({ onRefine, status = 'idle' }: PromptInputProps) {
   const charCount = promptValue.length;
   const wordCount = promptValue.trim().split(/\s+/).filter(Boolean).length;
 
+  function handleExampleClick(exampleId: string) {
+    const example = EXAMPLES.find((e) => e.id === exampleId);
+    if (!example) {
+      return;
+    }
+    setSelectedExampleId(exampleId);
+    form.setValue('prompt', example.input, { shouldValidate: true });
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
-      form.handleSubmit(onRefine)();
+      form.handleSubmit((data) => onRefine(data, selectedExampleId))();
     }
+  }
+
+  function handleClear() {
+    setSelectedExampleId(null);
+    form.reset();
+    onClear?.();
   }
 
   return (
@@ -56,6 +78,11 @@ export function PromptInput({ onRefine, status = 'idle' }: PromptInputProps) {
               className="min-h-[172px] resize-none rounded-none border-0 px-[22px] py-[18px] font-mono text-[14.5px] leading-[1.72] shadow-none focus-visible:ring-0"
               rows={6}
               onKeyDown={handleKeyDown}
+              onChange={(e) => {
+                field.onChange(e);
+                // Typing after selecting an example means the user has diverged — clear demo flag.
+                setSelectedExampleId(null);
+              }}
             />
             {fieldState.invalid && (
               <FieldError
@@ -67,38 +94,37 @@ export function PromptInput({ onRefine, status = 'idle' }: PromptInputProps) {
         )}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-y-1.5 border-t border-border pl-[22px] pr-3 pb-3 pt-2.5">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-1.5 border-t border-border pl-[22px] pr-3 pb-3 pt-2.5">
+        {/* Chip row: stat text + example chips (or clear), wraps naturally */}
+        <div className="flex flex-wrap items-center gap-2">
           <span className="select-none whitespace-nowrap text-[12px] text-muted-foreground tabular-nums">
             {isEmpty
               ? 'No input yet'
               : `${charCount} chars · ${wordCount} words`}
           </span>
 
-          {/* Show "Use example" only when the composer is empty */}
-          {isEmpty && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                form.setValue('prompt', EXAMPLE_PROMPT, {
-                  shouldValidate: true,
-                })
-              }
-            >
-              <Wand2 />
-              Use example
-            </Button>
-          )}
+          {/* Four example chips — shown only when the composer is empty */}
+          {isEmpty &&
+            EXAMPLES.map((example) => (
+              <Button
+                key={example.id}
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => handleExampleClick(example.id)}
+              >
+                <Wand2 />
+                {example.label}&nbsp;·&nbsp;{example.tag}
+              </Button>
+            ))}
 
-          {/* Show "Clear" only when there is text and not loading */}
+          {/* Clear — shown when there is text and not loading */}
           {!isEmpty && !isLoading && (
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => form.reset()}
+              onClick={handleClear}
             >
               <X />
               Clear
@@ -106,14 +132,17 @@ export function PromptInput({ onRefine, status = 'idle' }: PromptInputProps) {
           )}
         </div>
 
-        <div className="flex items-center gap-2.5">
+        {/* Action row: kbd hint + Refine, always sits below on its own line */}
+        <div className="flex items-center justify-end gap-2.5">
           <kbd className="inline-flex items-center rounded-[5px] border border-border bg-muted px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground">
             ⌘↵
           </kbd>
           <Button
             type="button"
             disabled={!form.formState.isValid || isLoading}
-            onClick={form.handleSubmit(onRefine)}
+            onClick={form.handleSubmit((data) =>
+              onRefine(data, selectedExampleId),
+            )}
             className="relative h-11 gap-2 overflow-hidden px-[18px] text-[13.5px] font-[550]"
           >
             {/* Diagonal shimmer sweep while the request is in flight */}

@@ -39,6 +39,7 @@ describe('streamRefine', () => {
     const snapshots: string[] = [];
     const final = await streamRefine({
       prompt: 'fix the dropdown',
+      apiKey: 'sk-ant-test',
       onText: (text) => snapshots.push(text),
     });
 
@@ -59,24 +60,35 @@ describe('streamRefine', () => {
       streamingResponse(['{"refinedPrompt": "## Goal\\nDo it", "changes": [{']),
     ) as unknown as typeof fetch;
 
-    const final = await streamRefine({ prompt: 'x', onText: () => {} });
+    const final = await streamRefine({
+      prompt: 'x',
+      apiKey: 'sk-ant-test',
+      onText: () => {},
+    });
     expect(final.refinedPrompt).toBe('## Goal\nDo it');
     expect(final.changes).toEqual([]);
   });
 
-  test('sends the prompt as { prompt } JSON to /api/refine', async () => {
+  test('sends the prompt as { prompt } JSON and the key as X-Anthropic-Key header to /api/refine', async () => {
     const fetchMock = mock(
       async (_input: RequestInfo | URL, _init?: RequestInit) =>
         streamingResponse(['{"refinedPrompt":"x"}']),
     );
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-    await streamRefine({ prompt: 'hello', onText: () => {} });
+    await streamRefine({
+      prompt: 'hello',
+      apiKey: 'sk-ant-abc',
+      onText: () => {},
+    });
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe('/api/refine');
     expect(init?.method).toBe('POST');
     expect(JSON.parse(init?.body as string)).toEqual({ prompt: 'hello' });
+    expect((init?.headers as Record<string, string>)['X-Anthropic-Key']).toBe(
+      'sk-ant-abc',
+    );
   });
 
   test('maps the route JSON error body to a RefineError', async () => {
@@ -87,7 +99,11 @@ describe('streamRefine', () => {
       ),
     ) as unknown as typeof fetch;
 
-    const promise = streamRefine({ prompt: 'hello', onText: () => {} });
+    const promise = streamRefine({
+      prompt: 'hello',
+      apiKey: 'sk-ant-test',
+      onText: () => {},
+    });
     await expect(promise).rejects.toBeInstanceOf(RefineError);
     await expect(promise).rejects.toThrow('refining service returned an error');
   });

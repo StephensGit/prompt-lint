@@ -12,16 +12,24 @@ interface ResultViewProps {
   error: string | null;
   /** Re-run the last prompt (error retry). */
   onRetry: () => void;
+  /** True when the result came from static demo data rather than a live API call. */
+  isDemoResult?: boolean;
 }
 
-/** The model behind the refining — shown on a completed result. */
 const MODEL_LABEL = 'Refined with Claude Sonnet 4.6';
+const DEMO_LABEL = 'Pre-computed example';
 
 // Six shimmer lines of varied widths (matching design handoff). Heights alternate
 // between 10px (every 3rd starting at 0) and 12px per the prototype.
 const SKELETON_WIDTHS = ['40%', '92%', '78%', '30%', '88%', '64%'];
 
-export function ResultView({ status, text, error, onRetry }: ResultViewProps) {
+export function ResultView({
+  status,
+  text,
+  error,
+  onRetry,
+  isDemoResult = false,
+}: ResultViewProps) {
   if (status === 'idle') {
     return <EmptyState />;
   }
@@ -57,7 +65,7 @@ export function ResultView({ status, text, error, onRetry }: ResultViewProps) {
         <div className="flex items-center gap-2 border-t border-border px-[22px] py-[11px]">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
           <span className="text-[12px] text-muted-foreground">
-            {MODEL_LABEL}
+            {isDemoResult ? DEMO_LABEL : MODEL_LABEL}
           </span>
         </div>
       )}

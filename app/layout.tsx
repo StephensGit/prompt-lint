@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
+import { SettingsDrawer } from '@/features/refine/components/SettingsDrawer';
+import { ApiKeyProvider } from '@/lib/api-key-context';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,8 +22,11 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static, inline no-flash theme script */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <Navbar />
-        {children}
+        <ApiKeyProvider>
+          <Navbar />
+          {children}
+          <SettingsDrawer />
+        </ApiKeyProvider>
       </body>
     </html>
   );

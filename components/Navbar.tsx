@@ -1,4 +1,5 @@
 import { Sparkles } from 'lucide-react';
+import { SettingsButton } from '@/components/SettingsButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 /** Top navigation bar — sticky, frosted-glass, with gradient brand mark. */
@@ -16,7 +17,10 @@ export function Navbar() {
           · sharpen rough prompts for Claude&nbsp;Code
         </span>
       </div>
-      <ThemeToggle />
+      <div className="flex items-center gap-1">
+        <SettingsButton />
+        <ThemeToggle />
+      </div>
     </header>
   );
 }

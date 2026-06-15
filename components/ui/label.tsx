@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 
 function Label({ className, ...props }: React.ComponentProps<'label'>) {
   return (
+    // biome-ignore lint/a11y/noLabelWithoutControl: htmlFor is passed via {...props} — Biome can't see it statically
     <label
       data-slot="label"
       className={cn(
