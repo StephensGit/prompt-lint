@@ -17,6 +17,8 @@ interface ResultViewProps {
 /** The model behind the refining — shown on a completed result. */
 const MODEL_LABEL = 'Refined with Claude Sonnet 4.6';
 
+// Six shimmer lines of varied widths (matching design handoff). Heights alternate
+// between 10px (every 3rd starting at 0) and 12px per the prototype.
 const SKELETON_WIDTHS = ['40%', '92%', '78%', '30%', '88%', '64%'];
 
 export function ResultView({ status, text, error, onRetry }: ResultViewProps) {
@@ -31,15 +33,18 @@ export function ResultView({ status, text, error, onRetry }: ResultViewProps) {
   const isStreaming = status === 'loading' || status === 'streaming';
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-(--border-strong) bg-card">
-      <div className="flex items-center justify-between gap-3 border-b border-(--border-strong) px-5 py-3">
-        <h2 className="text-[13px] font-semibold text-foreground">
+    <div className="animate-enter flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      {/* Card header */}
+      <div className="flex items-center justify-between gap-3 border-b border-border pl-[22px] pr-[14px] py-3">
+        <h2 className="flex items-center gap-2 text-[13px] font-semibold text-foreground">
+          <Sparkles className="h-[15px] w-[15px] text-muted-foreground" />
           Refined prompt
         </h2>
         {status === 'done' && text.length > 0 && <CopyButton text={text} />}
       </div>
 
-      <div className="p-5">
+      {/* Body */}
+      <div className="px-[22px] py-1.5 pb-[18px]">
         {status === 'loading' ? (
           <Skeleton />
         ) : (
@@ -47,10 +52,13 @@ export function ResultView({ status, text, error, onRetry }: ResultViewProps) {
         )}
       </div>
 
+      {/* Footer — model attribution */}
       {status === 'done' && (
-        <div className="flex items-center gap-2 border-t border-(--border-strong) px-5 py-3">
+        <div className="flex items-center gap-2 border-t border-border px-[22px] py-[11px]">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-          <span className="text-xs text-muted-foreground">{MODEL_LABEL}</span>
+          <span className="text-[12px] text-muted-foreground">
+            {MODEL_LABEL}
+          </span>
         </div>
       )}
     </div>
@@ -59,19 +67,19 @@ export function ResultView({ status, text, error, onRetry }: ResultViewProps) {
 
 function EmptyState() {
   return (
-    <div className="flex min-h-[280px] items-center justify-center rounded-lg border border-dashed border-border bg-(--surface) p-12">
-      <div className="flex flex-col items-center gap-4 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+    <div className="flex min-h-[240px] items-center justify-center rounded-lg border border-dashed border-(--border-strong) bg-(--surface) p-10">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
           <Sparkles className="h-5 w-5" />
         </div>
-        <div className="flex flex-col gap-2">
-          <h2 className="text-base font-semibold text-foreground">
+        <div className="flex flex-col gap-1.5">
+          <h2 className="text-[14px] font-semibold text-foreground">
             Your refined prompt appears here
           </h2>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Paste a rough instruction above and hit Refine. You&apos;ll get a
-            sharper, Claude Code-ready prompt plus a short &ldquo;what
-            changed&rdquo;.
+          <p className="max-w-[34ch] text-[13px] leading-[1.55] text-muted-foreground">
+            Paste a rough instruction on the left and hit Refine. You&apos;ll
+            get a sharper, Claude&nbsp;Code-ready prompt plus a short
+            &ldquo;what changed&rdquo;.
           </p>
         </div>
       </div>
@@ -81,13 +89,19 @@ function EmptyState() {
 
 function Skeleton() {
   return (
-    <output className="flex max-w-[70ch] flex-col gap-3" aria-label="Refining…">
+    <output
+      className="flex max-w-[70ch] flex-col gap-[11px] py-2"
+      aria-label="Refining…"
+    >
       {SKELETON_WIDTHS.map((width, index) => (
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: fixed, static skeleton rows
           key={index}
-          className="h-4 rounded bg-muted motion-safe:animate-pulse"
-          style={{ width }}
+          className="skeleton-shimmer rounded-[6px]"
+          style={{
+            width,
+            height: index % 3 === 0 ? 10 : 12,
+          }}
         />
       ))}
     </output>
@@ -102,24 +116,22 @@ function ErrorState({
   onRetry: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-destructive/40 bg-destructive/5 p-6">
-      <div className="flex items-start gap-3">
-        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
-        <div className="flex flex-col gap-1">
-          <h2 className="text-sm font-semibold text-foreground">
-            Something went wrong
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {message ?? 'Something went wrong refining your prompt.'} Try again,
-            or rephrase your draft.
-          </p>
+    <div className="flex gap-[13px] rounded-lg border border-red-500/40 bg-red-500/[0.07] p-[16px_18px] dark:border-red-400/45 dark:bg-red-500/10">
+      <AlertTriangle className="mt-0.5 h-[19px] w-[19px] shrink-0 text-red-600 dark:text-red-400" />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <h2 className="mb-0.5 text-[13.5px] font-semibold text-foreground">
+          The model hit an error
+        </h2>
+        <p className="mb-3 text-[13px] leading-[1.5] text-muted-foreground">
+          {message ??
+            'Claude couldn’t complete the refinement. This is usually transient — give it another go.'}
+        </p>
+        <div>
+          <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+            <RotateCw />
+            Try again
+          </Button>
         </div>
-      </div>
-      <div>
-        <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-          <RotateCw />
-          Try again
-        </Button>
       </div>
     </div>
   );

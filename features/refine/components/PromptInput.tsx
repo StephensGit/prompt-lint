@@ -1,11 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Sparkles, Wand2, X } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, X } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError } from '@/components/ui/field';
 import { Textarea } from '@/components/ui/textarea';
+import type { RefineStatus } from '@/features/refine/hooks/useRefineStream';
 import {
   type RefineRequest,
   RefineRequestSchema,
@@ -16,9 +17,12 @@ export const EXAMPLE_PROMPT =
 
 interface PromptInputProps {
   onRefine: (data: RefineRequest) => void;
+  status?: RefineStatus;
 }
 
-export function PromptInput({ onRefine }: PromptInputProps) {
+export function PromptInput({ onRefine, status = 'idle' }: PromptInputProps) {
+  const isLoading = status === 'loading' || status === 'streaming';
+
   const form = useForm<RefineRequest>({
     resolver: zodResolver(RefineRequestSchema),
     defaultValues: { prompt: '' },
@@ -38,7 +42,7 @@ export function PromptInput({ onRefine }: PromptInputProps) {
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-(--border-strong) bg-card transition-colors focus-within:border-primary/70 focus-within:ring-[3px] focus-within:ring-ring/16">
+    <div className="flex flex-col overflow-hidden rounded-lg border border-(--border-strong) bg-card shadow-sm transition-[border-color,box-shadow] focus-within:border-primary/70 focus-within:ring-[3px] focus-within:ring-ring/16">
       <Controller
         name="prompt"
         control={form.control}
@@ -48,59 +52,97 @@ export function PromptInput({ onRefine }: PromptInputProps) {
               {...field}
               id={field.name}
               aria-invalid={fieldState.invalid}
-              placeholder='Paste your rough prompt… e.g. "the status dropdown keeps its value when you switch tabs, it should reset. fix it"'
-              className="min-h-[200px] resize-none rounded-none border-0 p-5 font-mono text-[14.5px] leading-[1.72] shadow-none focus-visible:ring-0"
+              placeholder='Paste your rough prompt…  e.g. "the status dropdown keeps its value when you switch tabs, it should reset. fix it"'
+              className="min-h-[172px] resize-none rounded-none border-0 px-[22px] py-[18px] font-mono text-[14.5px] leading-[1.72] shadow-none focus-visible:ring-0"
               rows={6}
               onKeyDown={handleKeyDown}
             />
             {fieldState.invalid && (
-              <FieldError errors={[fieldState.error]} className="px-5 pb-2" />
+              <FieldError
+                errors={[fieldState.error]}
+                className="px-[22px] pb-2"
+              />
             )}
           </Field>
         )}
       />
 
-      <div className="flex items-center justify-between border-t border-(--border-strong) px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="select-none text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-y-1.5 border-t border-border pl-[22px] pr-3 pb-3 pt-2.5">
+        <div className="flex items-center gap-3">
+          <span className="select-none whitespace-nowrap text-[12px] text-muted-foreground tabular-nums">
             {isEmpty
               ? 'No input yet'
               : `${charCount} chars · ${wordCount} words`}
           </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              form.setValue('prompt', EXAMPLE_PROMPT, { shouldValidate: true })
-            }
-          >
-            <Wand2 />
-            Use example
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={isEmpty}
-            onClick={() => form.reset()}
-          >
-            <X />
-            Clear
-          </Button>
+
+          {/* Show "Use example" only when the composer is empty */}
+          {isEmpty && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                form.setValue('prompt', EXAMPLE_PROMPT, {
+                  shouldValidate: true,
+                })
+              }
+            >
+              <Wand2 />
+              Use example
+            </Button>
+          )}
+
+          {/* Show "Clear" only when there is text and not loading */}
+          {!isEmpty && !isLoading && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => form.reset()}
+            >
+              <X />
+              Clear
+            </Button>
+          )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <kbd className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+        <div className="flex items-center gap-2.5">
+          <kbd className="inline-flex items-center rounded-[5px] border border-border bg-muted px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground">
             ⌘↵
           </kbd>
           <Button
             type="button"
-            disabled={!form.formState.isValid}
+            disabled={!form.formState.isValid || isLoading}
             onClick={form.handleSubmit(onRefine)}
+            className="relative h-11 gap-2 overflow-hidden px-[18px] text-[13.5px] font-[550]"
           >
-            <Sparkles />
-            Refine
+            {/* Diagonal shimmer sweep while the request is in flight */}
+            {isLoading && (
+              <span
+                className="pointer-events-none absolute inset-0 -translate-x-full animate-[sweep_1.15s_ease-in-out_infinite]"
+                style={{
+                  background:
+                    'linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.18), transparent)',
+                }}
+                aria-hidden="true"
+              />
+            )}
+            {status === 'loading' ? (
+              <>
+                <Loader2 className="h-[15px] w-[15px] animate-[spin_0.7s_linear_infinite]" />
+                Analysing…
+              </>
+            ) : status === 'streaming' ? (
+              <>
+                <Loader2 className="h-[15px] w-[15px] animate-[spin_0.7s_linear_infinite]" />
+                Refining…
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-[15px] w-[15px]" />
+                Refine
+              </>
+            )}
           </Button>
         </div>
       </div>

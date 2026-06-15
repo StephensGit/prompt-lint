@@ -149,3 +149,69 @@
     @apply font-sans;
   }
 }
+
+/* ── Custom animations ── */
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+@keyframes sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* ── Skeleton shimmer lines ── */
+@layer components {
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 25%,
+      hsl(var(--muted-foreground) / 0.14) 37%,
+      hsl(var(--muted)) 63%
+    );
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer {
+      animation: none;
+      background: hsl(var(--muted));
+    }
+  }
+
+  /* Change cards — hover colour keyed by --huec (set inline per card) */
+  .change-item {
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+  .change-item:hover {
+    border-color: hsl(var(--huec) / 0.6);
+    box-shadow:
+      0 0 0 1px hsl(var(--huec) / 0.3),
+      0 1px 2px 0 hsl(240 6% 10% / 0.05);
+  }
+
+  /* Card entrance fade-up */
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-enter {
+      animation: enter 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
+  }
+}

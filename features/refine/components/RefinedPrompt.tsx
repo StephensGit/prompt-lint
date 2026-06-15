@@ -42,12 +42,13 @@ interface RefinedPromptProps {
   isStreaming: boolean;
 }
 
-/** A blinking caret at the live end of the stream (guarded for reduced motion). */
+/** Blinking caret at the live end of the stream. Steps(2,start) gives the sharp
+ *  on/off blink from the design handoff, gated behind reduced-motion. */
 function Caret() {
   return (
     <span
       aria-hidden
-      className="ml-0.5 inline-block h-[1.05em] w-[8px] translate-y-[2px] bg-primary align-baseline motion-safe:animate-pulse"
+      className="ml-[1px] inline-block h-[1.05em] w-[8px] translate-y-[2px] rounded-[1px] bg-primary align-baseline motion-safe:animate-[blink_1s_steps(2,start)_infinite]"
     />
   );
 }
@@ -91,20 +92,24 @@ function SectionBlock({
     <section
       className={
         style
-          ? cn('rounded-md border-l-[3px] p-4', style.bar, style.tint)
+          ? cn(
+              'rounded-md border-l-[3px] p-[10px_10px_10px_10px]',
+              style.bar,
+              style.tint,
+            )
           : undefined
       }
     >
       <h3
         className={cn(
-          'mb-2 text-[11px] font-semibold uppercase tracking-[0.06em]',
+          'mb-[3px] text-[11px] font-semibold uppercase tracking-[0.05em]',
           style ? style.label : 'text-muted-foreground',
         )}
       >
         {section.label}
       </h3>
       <div className="whitespace-pre-wrap font-mono text-[14.5px] leading-[1.72] text-foreground">
-        {section.body}
+        {section.body.replace(/^- /gm, '')}
         {showCaret && <Caret />}
       </div>
     </section>
