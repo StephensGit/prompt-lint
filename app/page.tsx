@@ -8,6 +8,8 @@ import {
   useRefineStream,
   WhatChanged,
 } from '@/features/refine';
+import type { RefineRequest } from '@/features/refine/schema';
+import { useApiKey } from '@/lib/api-key-context';
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
@@ -18,10 +20,30 @@ function Eyebrow({ children }: { children: ReactNode }) {
 }
 
 export default function Home() {
-  const { text, changes, status, error, refine, retry } = useRefineStream();
+  const {
+    text,
+    changes,
+    status,
+    error,
+    refine,
+    refineDemo,
+    reset,
+    retry,
+    isDemoResult,
+  } = useRefineStream();
+  const { apiKey, openSettings } = useApiKey();
 
-  // Per design: "What changed" is not rendered until result.
   const showChanges = status === 'done';
+
+  function handleRefine(data: RefineRequest, exampleId: string | null) {
+    if (exampleId !== null) {
+      refineDemo(exampleId);
+    } else if (apiKey) {
+      refine(data, apiKey);
+    } else {
+      openSettings('Add your Anthropic API key to refine your own prompts.');
+    }
+  }
 
   return (
     <main className="flex-1 px-[clamp(16px,4vw,32px)] py-[clamp(16px,3.4vw,30px)] pb-14">
@@ -42,7 +64,11 @@ export default function Home() {
         {/* Input pane — spans both columns, row 1 on desktop */}
         <div className="min-[720px]:col-span-2 min-[720px]:row-start-1">
           <Eyebrow>Rough prompt</Eyebrow>
-          <PromptInput onRefine={refine} status={status} />
+          <PromptInput
+            onRefine={handleRefine}
+            onClear={reset}
+            status={status}
+          />
         </div>
 
         {/* Mobile-only flow connector */}
@@ -62,7 +88,8 @@ export default function Home() {
             status={status}
             text={text}
             error={error}
-            onRetry={retry}
+            onRetry={() => retry(apiKey)}
+            isDemoResult={isDemoResult}
           />
         </div>
 

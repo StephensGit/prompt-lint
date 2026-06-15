@@ -13,6 +13,18 @@ function jsonError(message: string, status: number) {
 /** Map a pre-stream upstream failure to a clean status — never leak a stack trace. */
 function upstreamError(error: unknown) {
   if (error instanceof Anthropic.APIError) {
+    if (error.status === 401) {
+      return jsonError(
+        "That key doesn't seem valid — check it in your Anthropic console.",
+        401,
+      );
+    }
+    if (error.status === 429) {
+      return jsonError(
+        "You've hit your rate limit — wait a moment and try again.",
+        429,
+      );
+    }
     return jsonError(
       'The refining service returned an error.',
       error.status ?? 502,
@@ -24,9 +36,10 @@ function upstreamError(error: unknown) {
 /**
  * POST /api/refine — the server-side Anthropic proxy.
  *
- * Holds ANTHROPIC_API_KEY (server-only), sends the rough prompt to the Messages
- * API with META_PROMPT as the system prompt, and streams the model's raw text
- * deltas straight back. A thin pipe: it does not parse or reshape the output.
+ * Reads the API key from the X-Anthropic-Key request header (BYOK). The key is
+ * never stored or logged — it is used only for this request and then discarded.
+ * process.env.ANTHROPIC_API_KEY is no longer read here; that env entry can be
+ * removed from .env.local after deploying this change.
  */
 export async function POST(request: Request) {
   let body: unknown;
@@ -42,12 +55,9 @@ export async function POST(request: Request) {
     return jsonError(message ?? 'Enter a prompt to refine.', 400);
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = request.headers.get('X-Anthropic-Key');
   if (!apiKey) {
-    return jsonError(
-      'The server is not configured with an ANTHROPIC_API_KEY.',
-      500,
-    );
+    return jsonError('API key required — add yours in Settings.', 400);
   }
 
   const anthropic = new Anthropic({ apiKey });

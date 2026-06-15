@@ -74,6 +74,7 @@ function Field({
   ...props
 }: React.ComponentProps<'div'> & VariantProps<typeof fieldVariants>) {
   return (
+    // biome-ignore lint/a11y/useSemanticElements: div+role="group" is intentional here — <fieldset> carries browser default styles that break the layout
     <div
       role="group"
       data-slot="field"
@@ -193,7 +194,7 @@ function FieldError({
       ...new Map(errors.map((error) => [error?.message, error])).values(),
     ];
 
-    if (uniqueErrors?.length == 1) {
+    if (uniqueErrors?.length === 1) {
       return uniqueErrors[0]?.message;
     }
 
@@ -201,6 +202,7 @@ function FieldError({
       <ul className="ml-4 flex list-disc flex-col gap-1">
         {uniqueErrors.map(
           (error, index) =>
+            // biome-ignore lint/suspicious/noArrayIndexKey: deduped error list is order-stable
             error?.message && <li key={index}>{error.message}</li>,
         )}
       </ul>

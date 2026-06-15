@@ -11,6 +11,8 @@ import { extractRefinedPrompt } from '@/features/refine/utils/refined-prompt';
 export interface StreamRefineOptions {
   /** The validated rough prompt to refine. */
   prompt: string;
+  /** The user's Anthropic API key, sent as X-Anthropic-Key (BYOK). */
+  apiKey: string;
   /** Called with the decoded refined-prompt text on every chunk (cumulative). */
   onText: (text: string) => void;
   /** Optional caller signal for cancellation (e.g. a superseding submit / unmount). */
@@ -38,6 +40,7 @@ export class RefineError extends Error {
  */
 export async function streamRefine({
   prompt,
+  apiKey,
   onText,
   signal,
 }: StreamRefineOptions): Promise<RefineResponse> {
@@ -45,7 +48,10 @@ export async function streamRefine({
   try {
     response = await fetch('/api/refine', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'X-Anthropic-Key': apiKey,
+      },
       body: JSON.stringify({ prompt }),
       signal,
     });
