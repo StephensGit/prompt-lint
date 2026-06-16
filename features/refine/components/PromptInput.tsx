@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Sparkles, Wand2, X } from 'lucide-react';
+import { Loader2, Sparkles, X } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,15 @@ import {
   RefineRequestSchema,
 } from '@/features/refine/schema';
 import { EXAMPLES } from '@/lib/examples';
+
+const HUE_STYLE: Record<string, { background: string; color: string }> = {
+  Feature: { background: 'hsl(var(--hue1) / 0.16)', color: 'hsl(var(--hue1))' },
+  Refactor: {
+    background: 'hsl(var(--hue2) / 0.16)',
+    color: 'hsl(var(--hue2))',
+  },
+  Rename: { background: 'hsl(var(--hue3) / 0.16)', color: 'hsl(var(--hue3))' },
+};
 
 interface PromptInputProps {
   onRefine: (data: RefineRequest, exampleId: string | null) => void;
@@ -94,32 +103,45 @@ export function PromptInput({
         )}
       />
 
-      <div className="flex flex-col gap-1.5 border-t border-border pl-[22px] pr-3 pb-3 pt-2.5">
-        {/* Chip row: stat text + example chips (or clear), wraps naturally */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="select-none whitespace-nowrap text-[12px] text-muted-foreground tabular-nums">
-            {isEmpty
-              ? 'No input yet'
-              : `${charCount} chars · ${wordCount} words`}
-          </span>
+      {/*
+       * Footer: three sections.
+       * Mobile (flex-col): meta / chips (wrap) / kbd+Refine (right).
+       * Desktop (sm:flex-row): single row — meta left | chips centred | kbd+Refine right.
+       */}
+      <div className="flex flex-col gap-2 border-t border-border pl-[22px] pr-3 pb-3 pt-2.5 sm:flex-row sm:items-center">
+        {/* Left: stat / meta text */}
+        <span className="flex-none select-none whitespace-nowrap text-[12px] text-muted-foreground tabular-nums">
+          {isEmpty ? 'No input yet' : `${charCount} chars · ${wordCount} words`}
+        </span>
 
-          {/* Four example chips — shown only when the composer is empty */}
-          {isEmpty &&
-            EXAMPLES.map((example) => (
-              <Button
-                key={example.id}
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => handleExampleClick(example.id)}
-              >
-                <Wand2 />
-                {example.label}&nbsp;·&nbsp;{example.tag}
-              </Button>
-            ))}
-
-          {/* Clear — shown when there is text and not loading */}
-          {!isEmpty && !isLoading && (
+        {/* Centre: pill chips (empty state) or Clear (filled state) */}
+        {isEmpty ? (
+          <div className="flex flex-wrap items-center gap-1.5 sm:flex-1 sm:justify-center">
+            <span className="select-none text-xs text-muted-foreground">
+              Examples:
+            </span>
+            {EXAMPLES.map((example) => {
+              const isVague = example.tag === 'Vague';
+              return (
+                <button
+                  key={example.id}
+                  type="button"
+                  onClick={() => handleExampleClick(example.id)}
+                  className={[
+                    'cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-opacity hover:opacity-75',
+                    isVague ? 'bg-muted text-muted-foreground' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  style={!isVague ? HUE_STYLE[example.tag] : undefined}
+                >
+                  {example.tag}
+                </button>
+              );
+            })}
+          </div>
+        ) : !isLoading ? (
+          <div className="sm:flex-1">
             <Button
               type="button"
               variant="ghost"
@@ -129,11 +151,13 @@ export function PromptInput({
               <X />
               Clear
             </Button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="sm:flex-1" />
+        )}
 
-        {/* Action row: kbd hint + Refine, always sits below on its own line */}
-        <div className="flex items-center justify-end gap-2.5">
+        {/* Right: kbd hint + Refine */}
+        <div className="flex flex-none items-center justify-end gap-2.5">
           <kbd className="inline-flex items-center rounded-[5px] border border-border bg-muted px-1.5 py-0.5 font-mono text-[10.5px] text-muted-foreground">
             ⌘↵
           </kbd>
@@ -145,7 +169,6 @@ export function PromptInput({
             )}
             className="relative h-11 gap-2 overflow-hidden px-[18px] text-[13.5px] font-[550]"
           >
-            {/* Diagonal shimmer sweep while the request is in flight */}
             {isLoading && (
               <span
                 className="pointer-events-none absolute inset-0 -translate-x-full animate-[sweep_1.15s_ease-in-out_infinite]"
