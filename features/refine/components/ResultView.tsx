@@ -85,9 +85,8 @@ function EmptyState() {
             Your refined prompt appears here
           </h2>
           <p className="max-w-[34ch] text-[13px] leading-[1.55] text-muted-foreground">
-            Paste a rough instruction on the left and hit Refine. You&apos;ll
-            get a sharper, Claude&nbsp;Code-ready prompt plus a short
-            &ldquo;what changed&rdquo;.
+            Paste a rough instruction above and hit Refine. You&apos;ll get a sharper,
+            AI&nbsp;agent-ready prompt plus a short &ldquo;what changed&rdquo;.
           </p>
         </div>
       </div>
