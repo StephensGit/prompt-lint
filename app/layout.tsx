@@ -5,8 +5,8 @@ import { ApiKeyProvider } from '@/lib/api-key-context';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Prompt Refiner',
-  description: 'Sharpen rough prompts for Claude Code',
+  title: 'PromptLint',
+  description: 'A linter for Claude Code prompts',
 };
 
 // Applied before paint so the stored theme shows with no flash. Defaults to dark.

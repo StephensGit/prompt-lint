@@ -11,10 +11,10 @@ export function Navbar() {
           <Sparkles className="h-[17px] w-[17px]" strokeWidth={2.2} />
         </div>
         <span className="text-[14.5px] font-semibold tracking-[-0.01em] text-foreground">
-          Prompt Refiner
+          PromptLint
         </span>
         <span className="hidden text-[12.5px] text-muted-foreground sm:inline">
-          · sharpen rough prompts for Claude&nbsp;Code
+          · a linter for Claude&nbsp;Code prompts
         </span>
       </div>
       <div className="flex items-center gap-1">
